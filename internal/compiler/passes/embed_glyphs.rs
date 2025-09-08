@@ -159,7 +159,7 @@ fn embed_glyphs_with_fontdb<'a>(
                 })
                 .unwrap_or_default();
 
-            fontdb.query_with_family(Default::default(), family.as_deref()).or_else(|| {
+            fontdb.query_with_family(family).or_else(|| {
                 if let Some(source_location) = source_location {
                     diag.push_error_with_span("could not find font that provides specified family, falling back to Sans-Serif".to_string(), source_location);
                 } else {
@@ -174,7 +174,7 @@ fn embed_glyphs_with_fontdb<'a>(
         .iter()
         .map(|id| {
             let (source, _) =
-                fontdb.face_source(*id).expect("internal error: fontdb provided ids are not valid");
+                fontdb.2(*id).expect("internal error: fontdb provided ids are not valid");
             match source {
                 fontdb::Source::Binary(_) => unreachable!(),
                 fontdb::Source::File(path_buf) => path_buf,
@@ -184,7 +184,7 @@ fn embed_glyphs_with_fontdb<'a>(
         .collect::<Vec<std::path::PathBuf>>();
 
     // Map from path to family name
-    let mut fonts = std::collections::BTreeMap::<std::path::PathBuf, fontdb::ID>::new();
+    let mut fonts = std::collections::BTreeMap::<std::path::PathBuf, fontique::FamilyId>::new();
     fonts.extend(default_font_paths.iter().cloned().zip(default_font_ids.iter().cloned()));
 
     // add custom fonts

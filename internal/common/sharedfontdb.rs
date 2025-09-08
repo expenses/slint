@@ -21,18 +21,19 @@ pub struct FontDatabase {
     )))]
     pub fontconfig_fallback_families: Vec<String>,
     // Default font families to use instead of SansSerif when SLINT_DEFAULT_FONT env var is set.
-    pub default_font_family_ids: Vec<fontdb::ID>,
+    pub default_font_family_ids: Vec<fontique::FamilyId>,
     // Same as default_font_families but reduced to unique family names
     default_font_family_names: Vec<String>,
+    f: parking_lot::Mutex<fontique::Collection>
 }
 
 impl FontDatabase {
     pub fn query_with_family(
         &self,
-        query: fontdb::Query<'_>,
-        family: Option<&'_ str>,
-    ) -> Option<fontdb::ID> {
-        let mut query = query;
+        //query: fontdb::Query<'_>,
+        family: &'_ str,
+    ) -> Option<fontique::FamilyId> {
+        /*let mut query = query;
         if let Some(specified_family) = family {
             let single_family = [fontdb::Family::Name(specified_family)];
             query.families = &single_family;
@@ -47,8 +48,9 @@ impl FontDatabase {
                 .map(|name| fontdb::Family::Name(name))
                 .collect::<Vec<_>>();
             query.families = &family_storage;
-            self.db.query(&query)
-        }
+            self.db.query(&query)*/
+            self.f.lock().family_id(family)
+        
     }
 
     pub fn make_mut(&mut self) -> &mut fontdb::Database {
@@ -190,8 +192,9 @@ fn init_fontdb() -> FontDatabase {
             target_os = "nto",
         )))]
         fontconfig_fallback_families,
-        default_font_family_ids,
+        default_font_family_ids: Default::default(),
         default_font_family_names,
+        f: Default::default()
     }
 }
 

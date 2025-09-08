@@ -54,7 +54,7 @@ pub fn match_font(
 
         sharedfontdb::FONT_DB.with(|fonts| {
             let borrowed_fontdb = fonts.borrow();
-            borrowed_fontdb.query_with_family(query, Some(family_str)).map(|font_id| {
+            borrowed_fontdb.query_with_family(query, family_str).map(|font_id| {
                 let fontdue_font = get_or_create_fontdue_font(&borrowed_fontdb, font_id);
                 VectorFont::new(font_id, fontdue_font.clone(), requested_pixel_size)
             })
