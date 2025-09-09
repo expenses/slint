@@ -8,6 +8,8 @@ import { PrinterQueue } from "./printer_queue.slint";
 struct File  { name: string, preview: image }
 
 export component UsbPage inherits Page {
+    rotation-angle: 20deg;
+
     in property <[File]> files: [
         { name: ".." },
         { name: "cat.jpg", preview: @image-url("images/cat.jpg") },
