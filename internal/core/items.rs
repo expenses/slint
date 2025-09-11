@@ -1024,8 +1024,8 @@ declare_item_vtable! {
 #[repr(C)]
 #[derive(FieldOffsets, Default, SlintElement)]
 #[pin]
-/// The implementation of the `Rotate` element
-pub struct Rotate {
+/// The implementation of the `Transform` element
+pub struct Transform {
     pub rotation_angle: Property<f32>,
     pub scale_x: Property<f32>,
     pub scale_y: Property<f32>,
@@ -1034,7 +1034,7 @@ pub struct Rotate {
     pub cached_rendering_data: CachedRenderingData,
 }
 
-impl Item for Rotate {
+impl Item for Transform {
     fn init(self: Pin<&Self>, _self_rc: &ItemRc) {}
 
     fn layout_info(
@@ -1120,15 +1120,15 @@ impl Item for Rotate {
     }
 }
 
-impl ItemConsts for Rotate {
+impl ItemConsts for Transform {
     const cached_rendering_data_offset: const_field_offset::FieldOffset<
-        Rotate,
+        Transform,
         CachedRenderingData,
-    > = Rotate::FIELD_OFFSETS.cached_rendering_data.as_unpinned_projection();
+    > = Transform::FIELD_OFFSETS.cached_rendering_data.as_unpinned_projection();
 }
 
 declare_item_vtable! {
-    fn slint_get_RotateVTable() -> RotateVTable for Rotate
+    fn slint_get_TransformVTable() -> TransformVTable for Transform
 }
 
 declare_item_vtable! {

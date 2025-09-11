@@ -544,7 +544,7 @@ pub enum CachedItemBoundingBoxAndTransform {
         /// The item's offset relative to its parent.
         offset: LogicalVector,
     },
-    /// An item such as Rotate that defines an additional transformation
+    /// An item such as Transform that defines an additional transformation
     ItemWithTransform {
         /// The item's bounding rect relative to its parent.
         bounding_rect: LogicalRect,
