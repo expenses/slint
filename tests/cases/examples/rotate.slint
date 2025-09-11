@@ -16,13 +16,15 @@ TestCase := Window {
     Rectangle {
         x: 50px;
         y: 50px;
+        rotation-angle: 0deg;
 
         Image {
-            rotation-angle: 45deg;
             x: 50px;
             y: 50px;
             rotation-origin-x: 0;
             rotation-origin-y: 0;
+            scale-x: 1500%;
+            //rotation-angle: 0deg;
             width: 50px;
             height: 50px;
             source: @image-url("../../../logo/slint-logo-square-light-128x128.png");
