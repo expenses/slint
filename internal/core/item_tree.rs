@@ -819,8 +819,8 @@ impl ItemRc {
     pub fn children_transform(&self) -> Option<ItemTransform> {
         self.downcast::<crate::items::Rotate>().map(|rotate_item| {
             let origin = euclid::Vector2D::<f32, crate::lengths::LogicalPx>::from_lengths(
-                rotate_item.as_pin_ref().rotation_origin_x().cast(),
-                rotate_item.as_pin_ref().rotation_origin_y().cast(),
+                rotate_item.as_pin_ref().transform_origin_x().cast(),
+                rotate_item.as_pin_ref().transform_origin_y().cast(),
             );
             ItemTransform::translation(-origin.x, -origin.y)
                 .cast()

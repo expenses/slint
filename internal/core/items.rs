@@ -1029,8 +1029,8 @@ pub struct Rotate {
     pub rotation_angle: Property<f32>,
     pub scale_x: Property<f32>,
     pub scale_y: Property<f32>,
-    pub rotation_origin_x: Property<LogicalLength>,
-    pub rotation_origin_y: Property<LogicalLength>,
+    pub transform_origin_x: Property<LogicalLength>,
+    pub transform_origin_y: Property<LogicalLength>,
     pub cached_rendering_data: CachedRenderingData,
 }
 
@@ -1098,7 +1098,7 @@ impl Item for Rotate {
         _size: LogicalSize,
     ) -> RenderingResult {
         let origin =
-            LogicalVector::from_lengths(self.rotation_origin_x(), self.rotation_origin_y());
+            LogicalVector::from_lengths(self.transform_origin_x(), self.transform_origin_y());
         (*backend).translate(origin);
         (*backend).scale(self.scale_x() / 100.0, self.scale_y() / 100.0);
         (*backend).rotate(self.rotation_angle());

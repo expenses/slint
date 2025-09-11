@@ -39,8 +39,8 @@ component HeaderItemTemplate {
             width: 10px;
             colorize: Palette.foreground;
             source: Icons.chevron-down;
-            rotation-origin-x: self.width / 2;
-            rotation-origin-y: self.height / 2;
+            transform-origin-x: self.width / 2;
+            transform-origin-y: self.height / 2;
             states [
                 closed when !root.open: {
                     rotation-angle: -0.25turn;

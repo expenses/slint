@@ -246,8 +246,8 @@ When these properties are set, the `Text` can't have children.
 Text {
     text: "I'm dizzy";
     rotation-angle: 45deg;
-    rotation-origin-x: self.width / 2;
-    rotation-origin-y: self.height / 2;
+    transform-origin-x: self.width / 2;
+    transform-origin-y: self.height / 2;
     font-size: 30pt;
 }
 ```
@@ -256,11 +256,11 @@ Text {
 ### rotation-angle
 <SlintProperty propName="rotation-angle" typeName="angle"/>
 
-### rotation-origin-x
-<SlintProperty propName="rotation-origin-x" typeName="length" defaultValue='self.width / 2'/>
+### transform-origin-x
+<SlintProperty propName="transform-origin-x" typeName="length" defaultValue='self.width / 2'/>
 
-### rotation-origin-y
-<SlintProperty propName="rotation-origin-y" typeName="length" defaultValue='self.height / 2'/>
+### transform-origin-y
+<SlintProperty propName="transform-origin-y" typeName="length" defaultValue='self.height / 2'/>
 
 ## Accessibility
 

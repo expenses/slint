@@ -179,8 +179,8 @@ pub const RESERVED_ROTATION_PROPERTIES: &[(&str, Type)] = &[
     ("rotation-angle", Type::Angle),
     ("scale-x", Type::Percent),
     ("scale-y", Type::Percent),
-    ("rotation-origin-x", Type::LogicalLength),
-    ("rotation-origin-y", Type::LogicalLength),
+    ("transform-origin-x", Type::LogicalLength),
+    ("transform-origin-y", Type::LogicalLength),
 ];
 
 pub fn noarg_callback_type() -> Type {

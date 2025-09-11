@@ -174,8 +174,8 @@ pub async fn run_passes(
                 lhs: Expression::PropertyReference(NamedReference::new(
                     e,
                     match prop {
-                        "rotation-origin-x" => SmolStr::new_static("width"),
-                        "rotation-origin-y" => SmolStr::new_static("height"),
+                        "transform-origin-x" => SmolStr::new_static("width"),
+                        "transform-origin-y" => SmolStr::new_static("height"),
                         "rotation-angle" => return Expression::Invalid,
                         _ => unreachable!(),
                     },
