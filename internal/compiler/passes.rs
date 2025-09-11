@@ -176,6 +176,8 @@ pub async fn run_passes(
                     match prop {
                         "transform-origin-x" => SmolStr::new_static("width"),
                         "transform-origin-y" => SmolStr::new_static("height"),
+                        "rotation-origin-x" => SmolStr::new_static("width"),
+                        "rotation-origin-y" => SmolStr::new_static("height"),
                         "rotation-angle" => return Expression::Invalid,
                         "scale-x" => return Expression::Invalid,
                         "scale-y" => return Expression::Invalid,
