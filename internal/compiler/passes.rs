@@ -177,6 +177,8 @@ pub async fn run_passes(
                         "transform-origin-x" => SmolStr::new_static("width"),
                         "transform-origin-y" => SmolStr::new_static("height"),
                         "rotation-angle" => return Expression::Invalid,
+                        "scale-x" => return Expression::Invalid,
+                        "scale-y" => return Expression::Invalid,
                         _ => unreachable!(),
                     },
                 ))
