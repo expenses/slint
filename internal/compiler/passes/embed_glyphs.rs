@@ -14,24 +14,13 @@ use std::collections::HashSet;
 use std::rc::Rc;
 use std::sync::Arc;
 
-use i_slint_common::sharedfontdb::{self, fontdb};
+use i_slint_common::sharedfontique::{self, fontique, ttf_parser};
 
 #[derive(Clone, derive_more::Deref)]
 struct Font {
     font: fontique::QueryFont,
     #[deref]
     fontdue_font: Arc<fontdue::Font>,
-}
-
-impl Font {
-    fn metrics(&self) -> i_slint_common::sharedfontdb::DesignFontMetrics {
-        let face = i_slint_common::sharedfontdb::ttf_parser::Face::parse(
-            self.face_data.as_ref().as_ref(),
-            self.face_index,
-        )
-        .expect("unexpected corrupt ttf font that parsed previously");
-        i_slint_common::sharedfontdb::DesignFontMetrics::new(face)
-    }
 }
 
 #[cfg(target_arch = "wasm32")]
@@ -93,18 +82,15 @@ pub fn embed_glyphs<'a>(
         }
     }
 
-    sharedfontdb::FONT_DB.with(|db| {
-        embed_glyphs_with_fontdb(
-            compiler_config,
-            db,
-            doc,
-            pixel_sizes,
-            characters_seen,
-            all_docs,
-            diag,
-            generic_diag_location,
-        );
-    })
+    embed_glyphs_with_fontdb(
+        compiler_config,
+        doc,
+        pixel_sizes,
+        characters_seen,
+        all_docs,
+        diag,
+        generic_diag_location,
+    );
 }
 
 fn embed_glyphs_with_fontdb<'a>(
@@ -219,12 +205,8 @@ fn embed_glyphs_with_fontdb<'a>(
             }
         };
 
-        let Some(family_name) = fontdb
-            .face(face_id)
-            .expect("must succeed as we are within face_data with same face_id")
-            .families
-            .first()
-            .map(|(name, _)| name.clone())
+        let Some(family_name) =
+            sharedfontique::get_collection().family_name(font.family.0).map(|str| str.to_owned())
         else {
             diag.push_error(
                 format!(
@@ -238,7 +220,7 @@ fn embed_glyphs_with_fontdb<'a>(
 
         let embedded_bitmap_font = embed_font(
             family_name,
-            Font { id: face_id, fontdue_font, face_data, face_index },
+            Font { font, fontdue_font },
             &pixel_sizes,
             characters_seen.iter().cloned(),
             &fallback_fonts,
@@ -278,10 +260,7 @@ fn embed_glyphs_with_fontdb<'a>(
 }
 
 #[inline(never)] // workaround https://github.com/rust-lang/rust/issues/104099
-fn get_fallback_fonts(
-    compiler_config: &CompilerConfiguration,
-    fontdb: &sharedfontdb::FontDatabase,
-) -> Vec<Font> {
+fn get_fallback_fonts(compiler_config: &CompilerConfiguration) -> Vec<Font> {
     #[allow(unused)]
     let mut fallback_families: Vec<String> = Vec::new();
 
@@ -371,6 +350,8 @@ fn embed_font(
     let face_info = fontdb.face(font.id).unwrap();
 
     let metrics = font.metrics();
+    let face = ttf_parser::Face::parse(font.blob.data(), font.index).unwrap();
+    let metrics = sharedfontique::DesignFontMetrics::new_from_face(&font);
 
     BitmapFont {
         family_name,
@@ -480,8 +461,7 @@ fn generate_sdf_for_glyph(
     use nalgebra::{Affine2, Similarity2, Vector2};
 
     let face =
-        fdsm_ttf_parser::ttf_parser::Face::parse(font.face_data.as_ref().as_ref(), font.face_index)
-            .unwrap();
+        fdsm_ttf_parser::ttf_parser::Face::parse(font.font.blob.data(), font.font.index).unwrap();
     let glyph_id = face.glyph_index(code_point).unwrap_or_default();
     let mut shape = fdsm_ttf_parser::load_shape_from_face(&face, glyph_id);
 
