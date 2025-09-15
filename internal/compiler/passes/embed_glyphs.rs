@@ -18,11 +18,9 @@ use i_slint_common::sharedfontdb::{self, fontdb};
 
 #[derive(Clone, derive_more::Deref)]
 struct Font {
-    id: fontdb::ID,
+    font: fontique::QueryFont,
     #[deref]
     fontdue_font: Arc<fontdue::Font>,
-    face_data: Arc<dyn AsRef<[u8]> + Send + Sync>,
-    face_index: u32,
 }
 
 impl Font {
@@ -111,7 +109,6 @@ pub fn embed_glyphs<'a>(
 
 fn embed_glyphs_with_fontdb<'a>(
     compiler_config: &CompilerConfiguration,
-    fontdb: &RefCell<sharedfontdb::FontDatabase>,
     doc: &Document,
     pixel_sizes: Vec<i16>,
     characters_seen: HashSet<char>,
@@ -119,13 +116,12 @@ fn embed_glyphs_with_fontdb<'a>(
     diag: &mut BuildDiagnostics,
     generic_diag_location: Option<crate::diagnostics::SourceLocation>,
 ) {
-    let fallback_fonts = get_fallback_fonts(compiler_config, &fontdb.borrow());
+    let fallback_fonts = get_fallback_fonts(compiler_config);
 
     let mut custom_fonts = Vec::new();
 
     // add custom fonts
     {
-        let mut fontdb_mut = fontdb.borrow_mut();
         for doc in all_docs {
             for (font_path, import_token) in doc.custom_fonts.iter() {
                 let face_count = fontdb_mut.faces().count();
@@ -137,8 +133,6 @@ fn embed_glyphs_with_fontdb<'a>(
             }
         }
     }
-
-    let fontdb = fontdb.borrow();
 
     let default_font_ids = if !fontdb.default_font_family_ids.is_empty() {
         fontdb.default_font_family_ids.clone()
@@ -243,7 +237,6 @@ fn embed_glyphs_with_fontdb<'a>(
         };
 
         let embedded_bitmap_font = embed_font(
-            &fontdb,
             family_name,
             Font { id: face_id, fontdue_font, face_data, face_index },
             &pixel_sizes,
@@ -343,7 +336,6 @@ fn get_fallback_fonts(
 
 #[cfg(not(target_arch = "wasm32"))]
 fn embed_font(
-    fontdb: &fontdb::Database,
     family_name: String,
     font: Font,
     pixel_sizes: &[i16],
