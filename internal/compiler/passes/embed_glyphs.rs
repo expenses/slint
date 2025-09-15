@@ -107,8 +107,6 @@ fn embed_glyphs_with_fontdb<'a>(
     // Map from path to family name
     let mut fonts = std::collections::BTreeMap::<std::path::PathBuf, fontique::QueryFont>::new();
 
-    let mut custom_fonts: Vec<(fontique::FamilyId, Vec<fontique::FontInfo>)> = Vec::new();
-
     // add custom fonts
     {
         for doc in all_docs {
@@ -484,7 +482,7 @@ fn generate_sdf_for_glyph(
     let glyph_id = face.glyph_index(code_point).unwrap_or_default();
     let mut shape = fdsm_ttf_parser::load_shape_from_face(&face, glyph_id);
 
-    let metrics = font.metrics();
+    let metrics = sharedfontique::DesignFontMetrics::new(&font.font);
     let target_pixel_size = target_pixel_size as f64;
     let scale = target_pixel_size / metrics.units_per_em as f64;
 
