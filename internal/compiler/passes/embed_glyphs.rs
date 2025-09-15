@@ -9,7 +9,6 @@ use crate::expression_tree::BuiltinFunction;
 use crate::expression_tree::{Expression, Unit};
 use crate::object_tree::*;
 use crate::CompilerConfiguration;
-use std::cell::RefCell;
 use std::collections::HashSet;
 use std::rc::Rc;
 use std::sync::Arc;
@@ -192,9 +191,8 @@ fn embed_glyphs_with_fontdb<'a>(
     if custom_face_error {
         return;
     }
-
-    let mut embed_font_by_path_and_face_id = |path: &std::path::Path, face_id| {
-        let (fontdue_font, face_data, face_index) = match compiler_config.load_font_by_id(face_id) {
+    let mut embed_font_by_path_and_face_id = |path: &std::path::Path, font: fontique::QueryFont| {
+        let fontdue_font = match compiler_config.load_font_by_id(&font) {
             Ok(font) => font,
             Err(msg) => {
                 diag.push_error(
@@ -347,11 +345,8 @@ fn embed_font(
 
     character_map.sort_by_key(|entry| entry.code_point);
 
-    let face_info = fontdb.face(font.id).unwrap();
-
-    let metrics = font.metrics();
-    let face = ttf_parser::Face::parse(font.blob.data(), font.index).unwrap();
-    let metrics = sharedfontique::DesignFontMetrics::new_from_face(&font);
+    let face_info = ttf_parser::Face::parse(font.font.blob.data(), font.font.index).unwrap();
+    let metrics = sharedfontique::DesignFontMetrics::new_from_face(&face_info);
 
     BitmapFont {
         family_name,
@@ -362,8 +357,8 @@ fn embed_font(
         x_height: metrics.x_height,
         cap_height: metrics.cap_height,
         glyphs,
-        weight: face_info.weight.0,
-        italic: face_info.style != fontdb::Style::Normal,
+        weight: face_info.weight().to_number(),
+        italic: face_info.style() != ttf_parser::Style::Normal,
         #[cfg(feature = "sdf-fonts")]
         sdf: _compiler_config.use_sdf_fonts,
         #[cfg(not(feature = "sdf-fonts"))]
