@@ -103,90 +103,125 @@ fn embed_glyphs_with_fontdb<'a>(
 ) {
     let fallback_fonts = get_fallback_fonts(compiler_config);
 
-    let mut custom_fonts = Vec::new();
+    let mut custom_face_error = false;
+    // Map from path to family name
+    let mut fonts = std::collections::BTreeMap::<std::path::PathBuf, fontique::QueryFont>::new();
+
+    let mut custom_fonts: Vec<(fontique::FamilyId, Vec<fontique::FontInfo>)> = Vec::new();
 
     // add custom fonts
     {
         for doc in all_docs {
             for (font_path, import_token) in doc.custom_fonts.iter() {
-                let face_count = fontdb_mut.faces().count();
-                if let Err(e) = fontdb_mut.make_mut().load_font_file(font_path) {
-                    diag.push_error(format!("Error loading font: {e}"), import_token);
-                } else {
-                    custom_fonts.extend(fontdb_mut.faces().skip(face_count).map(|info| info.id))
+                match std::fs::read(&font_path) {
+                    Ok(bytes) => {
+                        let mut collection = sharedfontique::get_collection();
+                        for (family_id, font_infos) in collection.register_fonts(bytes.into(), None)
+                        {
+                            for font_info in font_infos {
+                                let path = match &font_info.source().kind {
+                                    fontique::SourceKind::Path(path) => path.to_path_buf(),
+                                    fontique::SourceKind::Memory(_) => {
+                                        diag.push_error(
+                                            "internal error: memory fonts are not supported in the compiler"
+                                                .to_string(),
+                                            &generic_diag_location,
+                                        );
+                                        custom_face_error = true;
+                                        continue;
+                                    }
+                                };
+                                let mut collection = sharedfontique::get_collection();
+                                let mut query = collection.query();
+
+                                query.set_families(std::iter::once(fontique::QueryFamily::from(
+                                    family_id,
+                                )));
+
+                                let mut font = None;
+
+                                query.matches_with(|queried_font| {
+                                    font = Some(queried_font.clone());
+                                    fontique::QueryStatus::Stop
+                                });
+                                if let Some(font) = font {
+                                    fonts.insert(path, font);
+                                }
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        diag.push_error(format!("Error loading font: {e}"), import_token);
+                    }
                 }
             }
         }
     }
 
-    let default_font_ids = if !fontdb.default_font_family_ids.is_empty() {
-        fontdb.default_font_family_ids.clone()
-    } else {
-        doc.exported_roots().filter_map(|c| {
-            let (family, source_location) = c
-                .root_element
-                .borrow()
-                .bindings
-                .get("default-font-family")
-                .and_then(|binding| {
-                    match &binding.borrow().expression {
-                        Expression::StringLiteral(family) => {
-                            Some((Some(family.clone()), binding.borrow().span.clone()))
-                        }
-                        _ => None,
-                    }
-                })
-                .unwrap_or_default();
+    for c in doc.exported_roots() {
+        let (family, source_location) = c
+            .root_element
+            .borrow()
+            .bindings
+            .get("default-font-family")
+            .and_then(|binding| match &binding.borrow().expression {
+                Expression::StringLiteral(family) => {
+                    Some((Some(family.clone()), binding.borrow().span.clone()))
+                }
+                _ => None,
+            })
+            .unwrap_or_default();
 
-            fontdb.query_with_family(Default::default(), family.as_deref()).or_else(|| {
+        let mut collection = sharedfontique::get_collection();
+        let mut query = collection.query();
+
+        query.set_families(std::iter::once(fontique::QueryFamily::Generic(
+            fontique::GenericFamily::SansSerif,
+        )));
+        if let Some(ref family) = family {
+            query.set_families(std::iter::once(fontique::QueryFamily::from(family.as_str())));
+        }
+
+        let mut font = None;
+
+        query.matches_with(|queried_font| {
+            font = Some(queried_font.clone());
+            fontique::QueryStatus::Stop
+        });
+
+        match font {
+            None => {
                 if let Some(source_location) = source_location {
                     diag.push_error_with_span("could not find font that provides specified family, falling back to Sans-Serif".to_string(), source_location);
                 } else {
-                    diag.push_error("internal error: fontdb could not determine a default font for sans-serif" .to_string(), &generic_diag_location);
+                    diag.push_error(
+                        "internal error: fontdb could not determine a default font for sans-serif"
+                            .to_string(),
+                        &generic_diag_location,
+                    );
                 };
-                None
-            })
-        }).collect()
-    };
-
-    let default_font_paths = default_font_ids
-        .iter()
-        .map(|id| {
-            let (source, _) =
-                fontdb.face_source(*id).expect("internal error: fontdb provided ids are not valid");
-            match source {
-                fontdb::Source::Binary(_) => unreachable!(),
-                fontdb::Source::File(path_buf) => path_buf,
-                fontdb::Source::SharedFile(path_buf, _) => path_buf,
             }
-        })
-        .collect::<Vec<std::path::PathBuf>>();
-
-    // Map from path to family name
-    let mut fonts = std::collections::BTreeMap::<std::path::PathBuf, fontdb::ID>::new();
-    fonts.extend(default_font_paths.iter().cloned().zip(default_font_ids.iter().cloned()));
-
-    // add custom fonts
-    let mut custom_face_error = false;
-    fonts.extend(custom_fonts.iter().filter_map(|face_id| {
-        fontdb.face(*face_id).and_then(|face_info| {
-            Some((
-                match &face_info.source {
-                    fontdb::Source::File(path) => path.clone(),
-                    _ => {
-                        diag.push_error(
-                            "internal error: memory fonts are not supported in the compiler"
-                                .to_string(),
-                            &generic_diag_location,
-                        );
-                        custom_face_error = true;
-                        return None;
-                    }
-                },
-                *face_id,
-            ))
-        })
-    }));
+            Some(query_font) => {
+                let mut collection = sharedfontique::get_collection();
+                let family_info = collection.family(query_font.family.0).unwrap();
+                for font_info in family_info.fonts() {
+                    let path = match &font_info.source().kind {
+                        fontique::SourceKind::Path(path) => path.to_path_buf(),
+                        fontique::SourceKind::Memory(_) => {
+                            diag.push_error(
+                                "internal error: memory fonts are not supported in the compiler"
+                                    .to_string(),
+                                &generic_diag_location,
+                            );
+                            custom_face_error = true;
+                            continue;
+                        }
+                    };
+                    fonts.insert(path, query_font.clone());
+                }
+            }
+        }
+    }
 
     if custom_face_error {
         return;
@@ -244,16 +279,16 @@ fn embed_glyphs_with_fontdb<'a>(
             });
         }
     };
-
+    /*
     // Make sure to embed the default font first, because that becomes the default at run-time.
     for path in default_font_paths {
         if let Some(font_id) = fonts.remove(&path) {
             embed_font_by_path_and_face_id(&path, font_id);
         }
     }
-
+    */
     for (path, face_id) in &fonts {
-        embed_font_by_path_and_face_id(path, *face_id);
+        embed_font_by_path_and_face_id(path, face_id.clone());
     }
 }
 
@@ -278,34 +313,23 @@ fn get_fallback_fonts(compiler_config: &CompilerConfiguration) -> Vec<Font> {
             .collect::<Vec<String>>();
     }
 
-    #[cfg(not(any(
-        target_family = "windows",
-        target_vendor = "apple",
-        target_arch = "wasm32",
-        target_os = "android"
-    )))]
-    {
-        fallback_families.clone_from(&fontdb.fontconfig_fallback_families);
-    }
-
     let fallback_fonts = fallback_families
         .iter()
         .filter_map(|fallback_family| {
-            fontdb
-                .query(&fontdb::Query {
-                    families: &[fontdb::Family::Name(fallback_family)],
-                    ..Default::default()
-                })
-                .and_then(|face_id| {
-                    compiler_config.load_font_by_id(face_id).ok().map(
-                        |(fontdue_font, face_data, face_index)| Font {
-                            id: face_id,
-                            fontdue_font,
-                            face_data,
-                            face_index,
-                        },
-                    )
-                })
+            let mut collection = sharedfontique::get_collection();
+            let mut query = collection.query();
+            query.set_families(std::iter::once(fontique::QueryFamily::from(&fallback_family[..])));
+            let mut font = None;
+            query.matches_with(|queried_font| {
+                font = Some(queried_font.clone());
+                fontique::QueryStatus::Stop
+            });
+            font.and_then(|font| {
+                compiler_config
+                    .load_font_by_id(&font)
+                    .ok()
+                    .map(|fontdue_font| Font { fontdue_font, font })
+            })
         })
         .collect::<Vec<_>>();
     fallback_fonts
