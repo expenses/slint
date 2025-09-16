@@ -198,17 +198,18 @@ fn embed_glyphs_with_fontdb<'a>(
                         path.clone()
                     } else {
                         match &font_info.source().kind {
-                        fontique::SourceKind::Path(path) => path.to_path_buf(),
-                        fontique::SourceKind::Memory(_) => {
-                            diag.push_error(
+                            fontique::SourceKind::Path(path) => path.to_path_buf(),
+                            fontique::SourceKind::Memory(_) => {
+                                diag.push_error(
                                 "internal error: memory fonts are not supported in the compiler"
                                     .to_string(),
                                 &generic_diag_location,
                             );
-                            custom_face_error = true;
-                            continue;
+                                custom_face_error = true;
+                                continue;
+                            }
                         }
-                    }};
+                    };
                     fonts.insert(path, query_font.clone());
                 }
             }
