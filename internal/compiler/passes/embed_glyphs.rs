@@ -147,6 +147,8 @@ fn embed_glyphs_with_fontdb<'a>(
         }
     }
 
+    let mut default_font_paths = Vec::new();
+
     for c in doc.exported_roots() {
         let (family, source_location) = c
             .root_element
@@ -164,11 +166,13 @@ fn embed_glyphs_with_fontdb<'a>(
         let mut collection = sharedfontique::get_collection();
         let mut query = collection.query();
 
-        query.set_families(std::iter::once(fontique::QueryFamily::Generic(
-            fontique::GenericFamily::SansSerif,
-        )));
         if let Some(ref family) = family {
             query.set_families(std::iter::once(fontique::QueryFamily::from(family.as_str())));
+        } else {
+            query.set_families(std::iter::once(fontique::QueryFamily::Generic(
+                fontique::GenericFamily::SansSerif,
+            )));
+
         }
 
         let mut font = None;
@@ -210,7 +214,8 @@ fn embed_glyphs_with_fontdb<'a>(
                             }
                         }
                     };
-                    fonts.insert(path, query_font.clone());
+                    fonts.insert(path.clone(), query_font.clone());
+                    default_font_paths.push(path);
                 }
             }
         }
@@ -272,16 +277,16 @@ fn embed_glyphs_with_fontdb<'a>(
             });
         }
     };
-    /*
+
     // Make sure to embed the default font first, because that becomes the default at run-time.
     for path in default_font_paths {
         if let Some(font_id) = fonts.remove(&path) {
             embed_font_by_path_and_face_id(&path, font_id);
         }
     }
-    */
-    for (path, face_id) in &fonts {
-        embed_font_by_path_and_face_id(path, face_id.clone());
+
+    for (path, face_id) in fonts {
+        embed_font_by_path_and_face_id(&path, face_id.clone());
     }
 }
 
