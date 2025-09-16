@@ -104,8 +104,10 @@ fn embed_glyphs_with_fontdb<'a>(
     let fallback_fonts = get_fallback_fonts(compiler_config);
 
     let mut custom_face_error = false;
-    // Map from path to family name
+    // Map from path to font
     let mut fonts = std::collections::BTreeMap::<std::path::PathBuf, fontique::QueryFont>::new();
+    // Map from family id to path
+    let mut paths = std::collections::BTreeMap::<fontique::FamilyId, std::path::PathBuf>::new();
 
     // add custom fonts
     {
@@ -125,6 +127,8 @@ fn embed_glyphs_with_fontdb<'a>(
                             )));
 
                             let mut font = None;
+
+                            paths.insert(family_id, path.into());
 
                             query.matches_with(|queried_font| {
                                 font = Some(queried_font.clone());
@@ -190,7 +194,10 @@ fn embed_glyphs_with_fontdb<'a>(
                 let mut collection = sharedfontique::get_collection();
                 let family_info = collection.family(query_font.family.0).unwrap();
                 for font_info in family_info.fonts() {
-                    let path = match &font_info.source().kind {
+                    let path = if let Some(path) = paths.get(&query_font.family.0) {
+                        path.clone()
+                    } else {
+                        match &font_info.source().kind {
                         fontique::SourceKind::Path(path) => path.to_path_buf(),
                         fontique::SourceKind::Memory(_) => {
                             diag.push_error(
@@ -201,7 +208,7 @@ fn embed_glyphs_with_fontdb<'a>(
                             custom_face_error = true;
                             continue;
                         }
-                    };
+                    }};
                     fonts.insert(path, query_font.clone());
                 }
             }
