@@ -24,8 +24,5 @@ shared-fontique = ["dep:fontique", "dep:ttf-parser"]
 ttf-parser = { workspace = true, optional = true }
 fontique = { version = "0.5.0", optional = true }
 
-[target.'cfg(not(any(target_family = "windows", target_vendor = "apple", target_arch = "wasm32", target_os = "android")))'.dependencies]
-libloading = { version = "0.8.0", optional = true }
-
 [package.metadata.docs.rs]
 rustdoc-args = ["--generate-link-to-definition"]
