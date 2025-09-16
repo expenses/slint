@@ -110,41 +110,28 @@ fn embed_glyphs_with_fontdb<'a>(
     // add custom fonts
     {
         for doc in all_docs {
-            for (font_path, import_token) in doc.custom_fonts.iter() {
-                match std::fs::read(&font_path) {
+            for (path, import_token) in doc.custom_fonts.iter() {
+                match std::fs::read(&path) {
                     Ok(bytes) => {
                         let mut collection = sharedfontique::get_collection();
-                        for (family_id, font_infos) in collection.register_fonts(bytes.into(), None)
+                        for (family_id, _font_infos) in
+                            collection.register_fonts(bytes.into(), None)
                         {
-                            for font_info in font_infos {
-                                let path = match &font_info.source().kind {
-                                    fontique::SourceKind::Path(path) => path.to_path_buf(),
-                                    fontique::SourceKind::Memory(_) => {
-                                        diag.push_error(
-                                            "internal error: memory fonts are not supported in the compiler"
-                                                .to_string(),
-                                            &generic_diag_location,
-                                        );
-                                        custom_face_error = true;
-                                        continue;
-                                    }
-                                };
-                                let mut collection = sharedfontique::get_collection();
-                                let mut query = collection.query();
+                            let mut collection = sharedfontique::get_collection();
+                            let mut query = collection.query();
 
-                                query.set_families(std::iter::once(fontique::QueryFamily::from(
-                                    family_id,
-                                )));
+                            query.set_families(std::iter::once(fontique::QueryFamily::from(
+                                family_id,
+                            )));
 
-                                let mut font = None;
+                            let mut font = None;
 
-                                query.matches_with(|queried_font| {
-                                    font = Some(queried_font.clone());
-                                    fontique::QueryStatus::Stop
-                                });
-                                if let Some(font) = font {
-                                    fonts.insert(path, font);
-                                }
+                            query.matches_with(|queried_font| {
+                                font = Some(queried_font.clone());
+                                fontique::QueryStatus::Stop
+                            });
+                            if let Some(font) = font {
+                                fonts.insert(path.into(), font);
                             }
                         }
                     }
