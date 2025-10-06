@@ -214,7 +214,7 @@ fn layout(text: &str, scale_factor: ScaleFactor, options: LayoutOptions) -> Layo
         max_physical_width,
         match options.horizontal_align {
             TextHorizontalAlignment::Left => parley::Alignment::Left,
-            TextHorizontalAlignment::Center => parley::Alignment::Middle,
+            TextHorizontalAlignment::Center => parley::Alignment::Center,
             TextHorizontalAlignment::Right => parley::Alignment::Right,
         },
         parley::AlignmentOptions::default(),
@@ -519,8 +519,8 @@ pub fn draw_text_input(
     );
     selection.geometry_with(&layout.inner, |rect, _| {
         item_renderer.fill_rectangle(
-            rect.min_x() as _,
-            rect.min_y() as f32 + layout.y_offset,
+            rect.x0 as _,
+            rect.y0 as f32 + layout.y_offset,
             rect.width() as _,
             rect.height() as _,
             text_input.selection_background_color(),
@@ -546,8 +546,8 @@ pub fn draw_text_input(
             cursor.geometry(&layout.inner, (text_input.text_cursor_width() * scale_factor).get());
 
         item_renderer.fill_rectangle(
-            rect.min_x() as _,
-            rect.min_y() as f32 + layout.y_offset,
+            rect.x0 as _,
+            rect.y0 as f32 + layout.y_offset,
             rect.width() as _,
             rect.height() as _,
             visual_representation.cursor_color,
@@ -655,7 +655,7 @@ pub fn text_input_cursor_rect_for_byte_offset(
     );
     let rect = cursor.geometry(&layout.inner, (text_input.text_cursor_width()).get());
     LogicalRect::new(
-        LogicalPoint::new(rect.min_x() as _, rect.min_y() as f32 + layout.y_offset),
+        LogicalPoint::new(rect.x0 as _, rect.y0 as f32 + layout.y_offset),
         LogicalSize::new(rect.width() as _, rect.height() as _),
     )
 }

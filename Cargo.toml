@@ -172,7 +172,7 @@ tikv-jemallocator = { version = "0.6" }
 wgpu-26 = { package = "wgpu", version = "26", default-features = false }
 input = { version = "0.9.0", default-features = false }
 tr = { version = "0.1", default-features = false }
-fontique = { version = "0.5.0" }
+fontique = { git = "https://github.com/linebender/parley", rev = "dcfa3a1a7927fa10c28e510cf1f7cc01b2a2a830" }
 
 [profile.release]
 lto = true
