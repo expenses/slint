@@ -7,7 +7,6 @@ use alloc::boxed::Box;
 use alloc::rc::Rc;
 use std::collections::HashMap;
 
-use crate::lengths::ScaleFactor;
 use i_slint_common::sharedfontique::{self, fontique};
 
 use super::super::PhysicalLength;
@@ -62,15 +61,6 @@ pub fn match_font(
     } else {
         None
     }
-}
-
-pub fn fallbackfont(font_request: &super::FontRequest, scale_factor: ScaleFactor) -> VectorFont {
-    let requested_pixel_size: PhysicalLength =
-        (font_request.pixel_size.unwrap_or(super::DEFAULT_FONT_SIZE).cast() * scale_factor).cast();
-
-    let font = font_request.query_fontique().unwrap();
-    let fontdue_font = get_or_create_fontdue_font(&font);
-    VectorFont::new(font, fontdue_font, requested_pixel_size)
 }
 
 pub fn register_font_from_memory(data: &'static [u8]) -> Result<(), Box<dyn std::error::Error>> {

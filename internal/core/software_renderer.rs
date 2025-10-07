@@ -718,8 +718,8 @@ impl RendererSealed for SoftwareRenderer {
         match font {
             #[cfg(feature = "software-renderer-systemfonts")]
             fonts::Font::VectorFont => {
-               sharedparley::text_size(font_request, text, max_width, scale_factor, text_wrap)
-            },
+                sharedparley::text_size(font_request, text, max_width, scale_factor, text_wrap)
+            }
             fonts::Font::PixelFont(pf) => {
                 let layout = fonts::text_layout_for_font(&pf, &font_request, scale_factor);
                 let (longest_line_width, height) = layout.text_size(
@@ -727,7 +727,8 @@ impl RendererSealed for SoftwareRenderer {
                     max_width.map(|max_width| (max_width.cast() * scale_factor).cast()),
                     text_wrap,
                 );
-                (PhysicalSize::from_lengths(longest_line_width, height).cast() / scale_factor).cast()
+                (PhysicalSize::from_lengths(longest_line_width, height).cast() / scale_factor)
+                    .cast()
             }
         }
     }
@@ -741,9 +742,7 @@ impl RendererSealed for SoftwareRenderer {
 
         match font {
             #[cfg(feature = "software-renderer-systemfonts")]
-            fonts::Font::VectorFont => {
-               sharedparley::font_metrics(font_request)
-            },
+            fonts::Font::VectorFont => sharedparley::font_metrics(font_request),
             fonts::Font::PixelFont(font) => {
                 let ascent: LogicalLength = (font.ascent().cast() / scale_factor).cast();
                 let descent: LogicalLength = (font.descent().cast() / scale_factor).cast();
@@ -771,7 +770,7 @@ impl RendererSealed for SoftwareRenderer {
 
         match font {
             #[cfg(feature = "software-renderer-systemfonts")]
-            fonts::Font::VectorFont(_) => sharedparley::text_input_byte_offset_for_position(
+            fonts::Font::VectorFont => sharedparley::text_input_byte_offset_for_position(
                 text_input,
                 pos,
                 font_request,
@@ -819,7 +818,7 @@ impl RendererSealed for SoftwareRenderer {
 
         match font {
             #[cfg(feature = "software-renderer-systemfonts")]
-            fonts::Font::VectorFont(_) => sharedparley::text_input_cursor_rect_for_byte_offset(
+            fonts::Font::VectorFont => sharedparley::text_input_cursor_rect_for_byte_offset(
                 text_input,
                 byte_offset,
                 font_request,
@@ -2266,7 +2265,7 @@ impl<T: ProcessScene> crate::item_rendering::ItemRenderer for SceneBuilder<'_, T
 
         match font {
             #[cfg(feature = "software-renderer-systemfonts")]
-            fonts::Font::VectorFont(_) => {
+            fonts::Font::VectorFont => {
                 sharedparley::draw_text(self, text, Some(text.font_request(self_rc)), size);
             }
             fonts::Font::PixelFont(pf) => {
@@ -2324,7 +2323,7 @@ impl<T: ProcessScene> crate::item_rendering::ItemRenderer for SceneBuilder<'_, T
 
         match font {
             #[cfg(feature = "software-renderer-systemfonts")]
-            fonts::Font::VectorFont(_) => {
+            fonts::Font::VectorFont => {
                 sharedparley::draw_text_input(
                     self,
                     text_input,
@@ -2535,7 +2534,7 @@ impl<T: ProcessScene> crate::item_rendering::ItemRenderer for SceneBuilder<'_, T
 
         match font {
             #[cfg(feature = "software-renderer-systemfonts")]
-            fonts::Font::VectorFont(_) => {
+            fonts::Font::VectorFont => {
                 sharedparley::draw_text(
                     self,
                     std::pin::pin!((crate::SharedString::from(string), Brush::from(color))),

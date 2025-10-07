@@ -8,9 +8,8 @@ use core::cell::RefCell;
 
 use super::{Fixed, PhysicalLength, PhysicalSize};
 use crate::graphics::{BitmapFont, FontRequest};
-use crate::items::TextWrap;
-use crate::lengths::{LogicalLength, LogicalSize, ScaleFactor};
-use crate::textlayout::{FontMetrics, TextLayout};
+use crate::lengths::{LogicalLength, ScaleFactor};
+use crate::textlayout::TextLayout;
 use crate::Coord;
 
 crate::thread_local! {
@@ -64,49 +63,7 @@ pub mod systemfonts;
 pub enum Font {
     PixelFont(pixelfont::PixelFont),
     #[cfg(feature = "software-renderer-systemfonts")]
-    VectorFont(vectorfont::VectorFont),
-}
-
-impl crate::textlayout::FontMetrics<PhysicalLength> for Font {
-    fn ascent(&self) -> PhysicalLength {
-        match self {
-            Font::PixelFont(pixel_font) => pixel_font.ascent(),
-            #[cfg(feature = "software-renderer-systemfonts")]
-            Font::VectorFont(vector_font) => vector_font.ascent(),
-        }
-    }
-
-    fn height(&self) -> PhysicalLength {
-        match self {
-            Font::PixelFont(pixel_font) => pixel_font.height(),
-            #[cfg(feature = "software-renderer-systemfonts")]
-            Font::VectorFont(vector_font) => vector_font.height(),
-        }
-    }
-
-    fn descent(&self) -> PhysicalLength {
-        match self {
-            Font::PixelFont(pixel_font) => pixel_font.descent(),
-            #[cfg(feature = "software-renderer-systemfonts")]
-            Font::VectorFont(vector_font) => vector_font.descent(),
-        }
-    }
-
-    fn x_height(&self) -> PhysicalLength {
-        match self {
-            Font::PixelFont(pixel_font) => pixel_font.x_height(),
-            #[cfg(feature = "software-renderer-systemfonts")]
-            Font::VectorFont(vector_font) => vector_font.x_height(),
-        }
-    }
-
-    fn cap_height(&self) -> PhysicalLength {
-        match self {
-            Font::PixelFont(pixel_font) => pixel_font.cap_height(),
-            #[cfg(feature = "software-renderer-systemfonts")]
-            Font::VectorFont(vector_font) => vector_font.cap_height(),
-        }
-    }
+    VectorFont,
 }
 
 pub fn match_font(request: &FontRequest, scale_factor: ScaleFactor) -> Font {
@@ -135,8 +92,8 @@ pub fn match_font(request: &FontRequest, scale_factor: ScaleFactor) -> Font {
         Some(bitmap_font) => bitmap_font,
         None => {
             #[cfg(feature = "software-renderer-systemfonts")]
-            if let Some(vectorfont) = systemfonts::match_font(request, scale_factor) {
-                return vectorfont.into();
+            if let Some(_) = systemfonts::match_font(request, scale_factor) {
+                return Font::VectorFont;
             }
             if let Some(fallback_bitmap_font) = BITMAP_FONTS.with(|fonts| {
                 let fonts = fonts.borrow();
@@ -150,7 +107,7 @@ pub fn match_font(request: &FontRequest, scale_factor: ScaleFactor) -> Font {
                 fallback_bitmap_font
             } else {
                 #[cfg(feature = "software-renderer-systemfonts")]
-                return systemfonts::fallbackfont(request, scale_factor).into();
+                return Font::VectorFont;
                 #[cfg(not(feature = "software-renderer-systemfonts"))]
                 panic!("No font fallback found. The software renderer requires enabling the `EmbedForSoftwareRenderer` option when compiling slint files.")
             }
@@ -171,14 +128,11 @@ pub fn match_font(request: &FontRequest, scale_factor: ScaleFactor) -> Font {
     pixelfont::PixelFont { bitmap_font: font, glyphs: matching_glyphs, pixel_size }.into()
 }
 
-pub fn text_layout_for_font<'a, Font>(
-    font: &'a Font,
+pub fn text_layout_for_font<'a>(
+    font: &'a pixelfont::PixelFont,
     font_request: &FontRequest,
     scale_factor: ScaleFactor,
-) -> TextLayout<'a, Font>
-where
-    Font: crate::textlayout::AbstractFont + crate::textlayout::TextShaper<Length = PhysicalLength>,
-{
+) -> TextLayout<'a, pixelfont::PixelFont> {
     let letter_spacing =
         font_request.letter_spacing.map(|spacing| (spacing.cast() * scale_factor).cast());
 
@@ -187,54 +141,4 @@ where
 
 pub fn register_bitmap_font(font_data: &'static BitmapFont) {
     BITMAP_FONTS.with(|fonts| fonts.borrow_mut().push(font_data))
-}
-
-pub fn text_size(
-    font_request: FontRequest,
-    text: &str,
-    max_width: Option<LogicalLength>,
-    scale_factor: ScaleFactor,
-    text_wrap: TextWrap,
-) -> LogicalSize {
-    let font = match_font(&font_request, scale_factor);
-    let (longest_line_width, height) = match font {
-        Font::PixelFont(pf) => {
-            let layout = text_layout_for_font(&pf, &font_request, scale_factor);
-            layout.text_size(
-                text,
-                max_width.map(|max_width| (max_width.cast() * scale_factor).cast()),
-                text_wrap,
-            )
-        }
-        #[cfg(feature = "software-renderer-systemfonts")]
-        Font::VectorFont(vf) => {
-            let layout = text_layout_for_font(&vf, &font_request, scale_factor);
-            layout.text_size(
-                text,
-                max_width.map(|max_width| (max_width.cast() * scale_factor).cast()),
-                text_wrap,
-            )
-        }
-    };
-
-    (PhysicalSize::from_lengths(longest_line_width, height).cast() / scale_factor).cast()
-}
-
-pub fn font_metrics(
-    font_request: FontRequest,
-    scale_factor: ScaleFactor,
-) -> crate::items::FontMetrics {
-    let font = match_font(&font_request, scale_factor);
-
-    let ascent: LogicalLength = (font.ascent().cast() / scale_factor).cast();
-    let descent: LogicalLength = (font.descent().cast() / scale_factor).cast();
-    let x_height: LogicalLength = (font.x_height().cast() / scale_factor).cast();
-    let cap_height: LogicalLength = (font.cap_height().cast() / scale_factor).cast();
-
-    crate::items::FontMetrics {
-        ascent: ascent.get() as _,
-        descent: descent.get() as _,
-        x_height: x_height.get() as _,
-        cap_height: cap_height.get() as _,
-    }
 }
