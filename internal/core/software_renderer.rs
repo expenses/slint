@@ -29,7 +29,7 @@ use crate::lengths::{
 };
 use crate::partial_renderer::{DirtyRegion, PartialRenderingState};
 use crate::renderer::RendererSealed;
-use crate::textlayout::{AbstractFont, FontMetrics, TextParagraphLayout};
+use crate::textlayout::{FontMetrics, TextParagraphLayout};
 use crate::window::{WindowAdapter, WindowInner};
 use crate::{Brush, Color, ImageInner, StaticTextures};
 use alloc::rc::{Rc, Weak};
@@ -1893,16 +1893,14 @@ impl<'a, T: ProcessScene> SceneBuilder<'a, T> {
         };
     }
 
-    fn draw_text_paragraph<Font>(
+    fn draw_text_paragraph(
         &mut self,
-        paragraph: &TextParagraphLayout<'_, Font>,
+        paragraph: &TextParagraphLayout<'_, fonts::pixelfont::PixelFont>,
         physical_clip: euclid::Rect<f32, PhysicalPx>,
         offset: euclid::Vector2D<f32, PhysicalPx>,
         color: Color,
         selection: Option<SelectionInfo>,
-    ) where
-        Font: AbstractFont + crate::textlayout::TextShaper<Length = PhysicalLength> + GlyphRenderer,
-    {
+    ) {
         paragraph
             .layout_lines::<()>(
                 |glyphs, line_x, line_y, _, sel| {

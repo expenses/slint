@@ -64,7 +64,7 @@ pub trait GlyphRenderer {
 
 pub(super) const DEFAULT_FONT_SIZE: LogicalLength = LogicalLength::new(12 as Coord);
 
-mod pixelfont;
+pub mod pixelfont;
 #[cfg(feature = "software-renderer-systemfonts")]
 pub mod vectorfont;
 
