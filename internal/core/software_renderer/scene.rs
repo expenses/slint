@@ -10,6 +10,7 @@ use super::{
 use crate::graphics::{SharedImageBuffer, TexturePixelFormat};
 use crate::lengths::{PointLengths as _, SizeLengths as _};
 use crate::Color;
+#[cfg(feature = "software-renderer-systemfonts")]
 use alloc::rc::Rc;
 use alloc::vec::Vec;
 use euclid::Length;
@@ -417,13 +418,18 @@ impl SceneTextureExtra {
 #[derive(Clone)]
 pub enum SharedBufferData {
     SharedImage(SharedImageBuffer),
-    AlphaMap { data: Rc<[u8]>, width: u16 },
+    #[cfg(feature = "software-renderer-systemfonts")]
+    AlphaMap {
+        data: Rc<[u8]>,
+        width: u16,
+    },
 }
 
 impl SharedBufferData {
     pub fn width(&self) -> usize {
         match self {
             SharedBufferData::SharedImage(image) => image.width() as usize,
+            #[cfg(feature = "software-renderer-systemfonts")]
             SharedBufferData::AlphaMap { width, .. } => *width as usize,
         }
     }
@@ -431,6 +437,7 @@ impl SharedBufferData {
     pub fn height(&self) -> usize {
         match self {
             SharedBufferData::SharedImage(image) => image.height() as usize,
+            #[cfg(feature = "software-renderer-systemfonts")]
             SharedBufferData::AlphaMap { data, width, .. } => data.len() / *width as usize,
         }
     }
@@ -469,6 +476,7 @@ impl SharedBufferCommand {
                     extra: self.extra,
                 }
             }
+            #[cfg(feature = "software-renderer-systemfonts")]
             SharedBufferData::AlphaMap { data, width } => SceneTexture {
                 data: &data[start..end],
                 pixel_stride: *width,

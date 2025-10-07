@@ -1,6 +1,7 @@
 // Copyright © SixtyFPS GmbH <info@slint.dev>
 // SPDX-License-Identifier: GPL-3.0-only OR LicenseRef-Slint-Royalty-free-2.0 OR LicenseRef-Slint-Software-3.0
 
+#[cfg(feature = "software-renderer-systemfonts")]
 use alloc::rc::Rc;
 use alloc::vec::Vec;
 use core::cell::RefCell;
@@ -16,33 +17,26 @@ crate::thread_local! {
     static BITMAP_FONTS: RefCell<Vec<&'static BitmapFont>> = RefCell::default()
 }
 
-#[derive(derive_more::From, Clone)]
-pub enum GlyphAlphaMap {
-    Static(&'static [u8]),
-    Shared(Rc<[u8]>),
-}
-
 #[derive(Clone)]
-pub struct RenderableGlyph {
+pub struct RenderablePixelGlyph {
     pub x: Fixed<i32, 8>,
     pub y: Fixed<i32, 8>,
     pub width: PhysicalLength,
     pub height: PhysicalLength,
-    pub alpha_map: GlyphAlphaMap,
+    pub alpha_map: &'static [u8],
     pub pixel_stride: u16,
     pub sdf: bool,
 }
 
-impl RenderableGlyph {
+impl RenderablePixelGlyph {
     pub fn size(&self) -> PhysicalSize {
         PhysicalSize::from_lengths(self.width, self.height)
     }
 }
 
-// Subset of `RenderableGlyph`, specfically for VectorFonts.
+#[cfg(feature = "software-renderer-systemfonts")]
 #[derive(Clone)]
 pub struct RenderableVectorGlyph {
-    pub x: Fixed<i32, 8>,
     pub y: Fixed<i32, 8>,
     pub width: PhysicalLength,
     pub height: PhysicalLength,
@@ -50,16 +44,11 @@ pub struct RenderableVectorGlyph {
     pub pixel_stride: u16,
 }
 
+#[cfg(feature = "software-renderer-systemfonts")]
 impl RenderableVectorGlyph {
     pub fn size(&self) -> PhysicalSize {
         PhysicalSize::from_lengths(self.width, self.height)
     }
-}
-
-pub trait GlyphRenderer {
-    fn render_glyph(&self, glyph_id: core::num::NonZeroU16) -> Option<RenderableGlyph>;
-    /// The amount of pixel in the original image that correspond to one pixel in the rendered image
-    fn scale_delta(&self) -> Fixed<u16, 8>;
 }
 
 pub(super) const DEFAULT_FONT_SIZE: LogicalLength = LogicalLength::new(12 as Coord);

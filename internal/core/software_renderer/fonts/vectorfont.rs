@@ -93,10 +93,7 @@ impl VectorFont {
         }
     }
 
-    pub fn render_vector_glyph(
-        &self,
-        glyph_id: core::num::NonZeroU16,
-    ) -> Option<RenderableVectorGlyph> {
+    pub fn render_glyph(&self, glyph_id: core::num::NonZeroU16) -> Option<RenderableVectorGlyph> {
         GLYPH_CACHE.with(|cache| {
             let mut cache = cache.borrow_mut();
 
@@ -111,7 +108,6 @@ impl VectorFont {
                 let alpha_map: Rc<[u8]> = alpha_map.into();
 
                 let glyph = super::RenderableVectorGlyph {
-                    x: Fixed::from_integer(metrics.xmin.try_into().unwrap()),
                     y: Fixed::from_integer(metrics.ymin.try_into().unwrap()),
                     width: PhysicalLength::new(metrics.width.try_into().unwrap()),
                     height: PhysicalLength::new(metrics.height.try_into().unwrap()),
@@ -209,23 +205,5 @@ impl crate::textlayout::FontMetrics<PhysicalLength> for VectorFont {
 
     fn cap_height(&self) -> PhysicalLength {
         self.cap_height
-    }
-}
-
-impl super::GlyphRenderer for VectorFont {
-    fn render_glyph(&self, glyph_id: core::num::NonZeroU16) -> Option<super::RenderableGlyph> {
-        self.render_vector_glyph(glyph_id).map(|glyph| super::RenderableGlyph {
-            x: glyph.x,
-            y: glyph.y,
-            width: glyph.width,
-            height: glyph.height,
-            alpha_map: glyph.alpha_map.into(),
-            pixel_stride: glyph.pixel_stride,
-            sdf: false,
-        })
-    }
-
-    fn scale_delta(&self) -> super::Fixed<u16, 8> {
-        super::Fixed::from_integer(1)
     }
 }

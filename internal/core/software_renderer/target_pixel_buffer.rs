@@ -119,6 +119,7 @@ impl DrawTextureArgs {
                             size,
                         )
                     }
+                    #[cfg(feature = "software-renderer-systemfonts")]
                     SharedBufferData::AlphaMap { data, .. } => TextureData::new(
                         &data[start..end],
                         TexturePixelFormat::AlphaMap,

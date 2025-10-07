@@ -13,7 +13,6 @@ mod fonts;
 mod minimal_software_window;
 mod scene;
 
-use self::fonts::GlyphRenderer;
 pub use self::minimal_software_window::MinimalSoftwareWindow;
 use self::scene::*;
 use crate::api::PlatformError;
@@ -1952,84 +1951,67 @@ impl<'a, T: ProcessScene> SceneBuilder<'a, T> {
                             continue;
                         };
 
-                        let data = match &glyph.alpha_map {
-                            fonts::GlyphAlphaMap::Static(data) => {
-                                if glyph.sdf {
-                                    let geometry = clipped_target.translate(offset).round();
-                                    let origin =
-                                        (geometry.origin - offset.round()).round().cast::<i16>();
-                                    let off_x = origin.x - target_rect.origin.x as i16;
-                                    let off_y = origin.y - target_rect.origin.y as i16;
-                                    let pixel_stride = glyph.pixel_stride;
-                                    let mut geometry = geometry.cast();
-                                    if geometry.size.width > glyph.width.get() - off_x {
-                                        geometry.size.width = glyph.width.get() - off_x
-                                    }
-                                    if geometry.size.height > glyph.height.get() - off_y {
-                                        geometry.size.height = glyph.height.get() - off_y
-                                    }
-                                    let source_size = geometry.size;
-                                    if source_size.is_empty() {
-                                        continue;
-                                    }
-
-                                    let delta32 = Fixed::<i32, 8>::from_fixed(scale_delta);
-                                    let normalize = |x: Fixed<i32, 8>| {
-                                        if x < Fixed::from_integer(0) {
-                                            x + Fixed::from_integer(1)
-                                        } else {
-                                            x
-                                        }
-                                    };
-                                    let fract_x = normalize(
-                                        (-glyph.x) - Fixed::from_integer(gl_x.get() as _),
-                                    );
-                                    let off_x = delta32 * off_x as i32 + fract_x;
-                                    let fract_y =
-                                        normalize(glyph.y - Fixed::from_integer(gl_y.get() as _));
-                                    let off_y = delta32 * off_y as i32 + fract_y;
-                                    let texture = SceneTexture {
-                                        data,
-                                        pixel_stride,
-                                        format: TexturePixelFormat::SignedDistanceField,
-                                        extra: SceneTextureExtra {
-                                            colorize: color,
-                                            // color already is mixed with global alpha
-                                            alpha: color.alpha(),
-                                            rotation: self.rotation.orientation,
-                                            dx: scale_delta,
-                                            dy: scale_delta,
-                                            off_x: Fixed::try_from_fixed(off_x).unwrap(),
-                                            off_y: Fixed::try_from_fixed(off_y).unwrap(),
-                                        },
-                                    };
-                                    self.processor.process_scene_texture(
-                                        geometry.transformed(self.rotation),
-                                        texture,
-                                    );
-                                    continue;
-                                };
-
-                                target_pixel_buffer::TextureDataContainer::Static(
-                                    target_pixel_buffer::TextureData::new(
-                                        data,
-                                        TexturePixelFormat::AlphaMap,
-                                        glyph.pixel_stride as usize,
-                                        euclid::size2(glyph.width.get(), glyph.height.get()).cast(),
-                                    ),
-                                )
+                        if glyph.sdf {
+                            let geometry = clipped_target.translate(offset).round();
+                            let origin = (geometry.origin - offset.round()).round().cast::<i16>();
+                            let off_x = origin.x - target_rect.origin.x as i16;
+                            let off_y = origin.y - target_rect.origin.y as i16;
+                            let pixel_stride = glyph.pixel_stride;
+                            let mut geometry = geometry.cast();
+                            if geometry.size.width > glyph.width.get() - off_x {
+                                geometry.size.width = glyph.width.get() - off_x
                             }
-                            fonts::GlyphAlphaMap::Shared(data) => {
-                                let source_rect = euclid::rect(0, 0, glyph.width.0, glyph.height.0);
-                                target_pixel_buffer::TextureDataContainer::Shared {
-                                    buffer: SharedBufferData::AlphaMap {
-                                        data: data.clone(),
-                                        width: glyph.pixel_stride,
-                                    },
-                                    source_rect,
+                            if geometry.size.height > glyph.height.get() - off_y {
+                                geometry.size.height = glyph.height.get() - off_y
+                            }
+                            let source_size = geometry.size;
+                            if source_size.is_empty() {
+                                continue;
+                            }
+
+                            let delta32 = Fixed::<i32, 8>::from_fixed(scale_delta);
+                            let normalize = |x: Fixed<i32, 8>| {
+                                if x < Fixed::from_integer(0) {
+                                    x + Fixed::from_integer(1)
+                                } else {
+                                    x
                                 }
-                            }
+                            };
+                            let fract_x =
+                                normalize((-glyph.x) - Fixed::from_integer(gl_x.get() as _));
+                            let off_x = delta32 * off_x as i32 + fract_x;
+                            let fract_y = normalize(glyph.y - Fixed::from_integer(gl_y.get() as _));
+                            let off_y = delta32 * off_y as i32 + fract_y;
+                            let texture = SceneTexture {
+                                data: glyph.alpha_map,
+                                pixel_stride,
+                                format: TexturePixelFormat::SignedDistanceField,
+                                extra: SceneTextureExtra {
+                                    colorize: color,
+                                    // color already is mixed with global alpha
+                                    alpha: color.alpha(),
+                                    rotation: self.rotation.orientation,
+                                    dx: scale_delta,
+                                    dy: scale_delta,
+                                    off_x: Fixed::try_from_fixed(off_x).unwrap(),
+                                    off_y: Fixed::try_from_fixed(off_y).unwrap(),
+                                },
+                            };
+                            self.processor.process_scene_texture(
+                                geometry.transformed(self.rotation),
+                                texture,
+                            );
+                            continue;
                         };
+
+                        let data = target_pixel_buffer::TextureDataContainer::Static(
+                            target_pixel_buffer::TextureData::new(
+                                glyph.alpha_map,
+                                TexturePixelFormat::AlphaMap,
+                                glyph.pixel_stride as usize,
+                                euclid::size2(glyph.width.get(), glyph.height.get()).cast(),
+                            ),
+                        );
                         let clipped_target =
                             clipped_target.translate(offset).round().transformed(self.rotation);
                         let target_rect =
@@ -2247,6 +2229,7 @@ impl<T: ProcessScene> crate::item_rendering::ItemRenderer for SceneBuilder<'_, T
         let font = fonts::match_font(&font_request, self.scale_factor);
 
         match font {
+            #[cfg(feature = "software-renderer-systemfonts")]
             fonts::Font::VectorFont(_) => {
                 sharedparley::draw_text(self, text, Some(text.font_request(self_rc)), size);
             }
@@ -2631,7 +2614,7 @@ impl<T: ProcessScene> sharedparley::GlyphRenderer for SceneBuilder<'_, T> {
 
         for positioned_glyph in glyphs_it {
             let Some(glyph) = std::num::NonZero::new(positioned_glyph.id as u16)
-                .and_then(|id| font.render_vector_glyph(id))
+                .and_then(|id| font.render_glyph(id))
             else {
                 continue;
             };
