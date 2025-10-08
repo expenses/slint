@@ -9,17 +9,11 @@ use std::collections::HashMap;
 
 use i_slint_common::sharedfontique::{self, fontique};
 
-use super::super::PhysicalLength;
-use super::vectorfont::VectorFont;
-
 crate::thread_local! {
     static FONTDUE_FONTS: RefCell<HashMap<(u64, u32), Rc<fontdue::Font>>> = Default::default();
 }
 
-pub fn get_or_create_fontdue_font_from_blob_and_index(
-    blob: &fontique::Blob<u8>,
-    index: u32,
-) -> Rc<fontdue::Font> {
+pub fn get_or_create_fontdue_font(blob: &fontique::Blob<u8>, index: u32) -> Rc<fontdue::Font> {
     FONTDUE_FONTS.with(|font_cache| {
         font_cache
             .borrow_mut()
@@ -38,29 +32,6 @@ pub fn get_or_create_fontdue_font_from_blob_and_index(
             })
             .clone()
     })
-}
-
-fn get_or_create_fontdue_font(font: &fontique::QueryFont) -> Rc<fontdue::Font> {
-    get_or_create_fontdue_font_from_blob_and_index(&font.blob, font.index)
-}
-
-pub fn match_font(
-    request: &super::FontRequest,
-    scale_factor: super::ScaleFactor,
-) -> Option<VectorFont> {
-    if request.family.is_some() {
-        let requested_pixel_size: PhysicalLength =
-            (request.pixel_size.unwrap_or(super::DEFAULT_FONT_SIZE).cast() * scale_factor).cast();
-
-        if let Some(font) = request.query_fontique() {
-            let fontdue_font = get_or_create_fontdue_font(&font);
-            Some(VectorFont::new(font, fontdue_font, requested_pixel_size))
-        } else {
-            None
-        }
-    } else {
-        None
-    }
 }
 
 pub fn register_font_from_memory(data: &'static [u8]) -> Result<(), Box<dyn std::error::Error>> {

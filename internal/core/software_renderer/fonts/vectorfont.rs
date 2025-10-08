@@ -44,14 +44,6 @@ pub struct VectorFont {
 
 impl VectorFont {
     pub fn new(
-        font: fontique::QueryFont,
-        fontdue_font: Rc<fontdue::Font>,
-        pixel_size: PhysicalLength,
-    ) -> Self {
-        Self::new_from_blob_and_index(font.blob, font.index, fontdue_font, pixel_size)
-    }
-
-    pub fn new_from_blob_and_index(
         font_blob: fontique::Blob<u8>,
         font_index: u32,
         fontdue_font: Rc<fontdue::Font>,

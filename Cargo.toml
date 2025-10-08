@@ -153,7 +153,6 @@ itertools = { version = "0.14" }
 log = { version = "0.4.17" }
 resvg = { version = "0.45.0", default-features = false, features = ["text", "raster-images"] }
 rowan = { version = "0.16.1" }
-rustybuzz = { version = "0.20.0" }
 send_wrapper = { version = "0.6.0" }
 serde = { version = "1.0.163", default-features = false, features = ["derive"] }
 serde_json = { version = "1.0.96" }
