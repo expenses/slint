@@ -2633,18 +2633,17 @@ impl<T: ProcessScene> sharedparley::GlyphRenderer for SceneBuilder<'_, T> {
     fn draw_glyph_run(
         &mut self,
         font: &sharedparley::parley::FontData,
-        font_size: f32,
+        font_size: sharedparley::PhysicalLength,
         color: Self::PlatformBrush,
         y_offset: sharedparley::PhysicalLength,
         glyphs_it: &mut dyn Iterator<Item = sharedparley::parley::layout::Glyph>,
     ) {
         let fontdue_font = fonts::systemfonts::get_or_create_fontdue_font(&font.data, font.index);
-        let font_size = PhysicalLength::new(font_size as _);
         let font = fonts::vectorfont::VectorFont::new(
             font.data.clone(),
             font.index,
             fontdue_font,
-            font_size,
+            font_size.cast(),
         );
 
         let global_offset =
