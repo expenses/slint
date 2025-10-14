@@ -66,6 +66,19 @@ pub static COLLECTION: std::sync::LazyLock<Collection> = std::sync::LazyLock::ne
                 }
             }
         }
+
+        // Force the specified default font, as if every `Window` had `default-font-family`
+        // set.
+        for generic_family in [
+            fontique::GenericFamily::SansSerif,
+            fontique::GenericFamily::SystemUi,
+            fontique::GenericFamily::UiSansSerif,
+        ] {
+            collection.set_generic_families(
+                generic_family,
+                default_fonts.iter().map(|(_, q)| q.family.0),
+            );
+        }
     }
 
     Collection { inner: collection, source_cache, default_fonts: Arc::new(default_fonts) }

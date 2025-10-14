@@ -47,6 +47,8 @@ fn main() -> std::io::Result<()> {
             .collect();
 
     std::env::set_var("SLINT_DEFAULT_FONT", default_font_path.clone());
+    // This environment variable also propagates into the test runner, so the variable is set when
+    // the tests are run.
     println!("cargo:rustc-env=SLINT_DEFAULT_FONT={}", default_font_path.display());
 
     let mut generated_file = BufWriter::new(std::fs::File::create(
