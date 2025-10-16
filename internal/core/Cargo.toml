@@ -72,7 +72,7 @@ tr = ["dep:tr"]
 
 default = ["std", "unicode"]
 
-shared-parley = ["shared-fontique", "dep:parley"]
+shared-parley = ["shared-fontique", "dep:parley", "experimental-rich-text"]
 
 [dependencies]
 i-slint-common = { workspace = true, features = ["default"] }
