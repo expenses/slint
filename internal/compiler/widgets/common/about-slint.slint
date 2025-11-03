@@ -3,7 +3,7 @@
 
 import { StyleMetrics, Palette, ScrollView, Palette } from "std-widgets-impl.slint";
 
-export component AboutSlint {
+export component AboutSlint inherits TouchArea {
     preferred-height: 100%;
     preferred-width: 100%;
     min-height: i-layout.min-height;
@@ -26,5 +26,9 @@ export component AboutSlint {
             font-size: 10px;
             horizontal-alignment: center;
         }
+    }
+
+    clicked => {
+        SlintInternal.open-url("https://slint.dev/");
     }
 }
