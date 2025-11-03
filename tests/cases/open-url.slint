@@ -1,0 +1,25 @@
+// Copyright © SixtyFPS GmbH <info@slint.dev>
+// SPDX-License-Identifier: GPL-3.0-only OR LicenseRef-Slint-Royalty-free-2.0 OR LicenseRef-Slint-Software-3.0
+
+export component TestCase  {
+    width: 800phx;
+    height: 600phx;
+
+    Rectangle {
+        x: 0px;
+        y: 0px;
+        width: 800phx;
+        height: 600phx;
+        TouchArea {
+            clicked => {
+                SlintInternal.open-url("https://google.com");
+            }
+        }
+    }
+}
+
+/*
+```rust
+let instance = TestCase::new().unwrap();
+```
+*/
