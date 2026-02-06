@@ -417,11 +417,9 @@ impl OpenGLSurface {
                 .map_err(|e| format!("Error creating OpenGL context: {e}"))
         }?;
 
-        let attrs = SurfaceAttributesBuilder::<WindowSurface>::new().build(
-            _window_handle.as_raw(),
-            width,
-            height,
-        );
+        let attrs = SurfaceAttributesBuilder::<WindowSurface>::new()
+            .with_single_buffer(true)
+            .build(_window_handle.as_raw(), width, height);
 
         let surface = unsafe {
             config
@@ -429,6 +427,9 @@ impl OpenGLSurface {
                 .create_window_surface(&config, &attrs)
                 .map_err(|e| format!("Error creating OpenGL window surface: {e}"))?
         };
+
+        dbg!(surface.is_single_buffered());
+        assert!(surface.is_single_buffered());
 
         let context = not_current_gl_context.make_current(&surface)
             .map_err(|glutin_error: glutin::error::Error| -> PlatformError {
