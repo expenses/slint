@@ -44,7 +44,7 @@ pub struct StyledTextParagraph {
 
 /// Error type returned by `StyledText::parse`
 #[cfg(feature = "markdown")]
-#[derive(Debug, thiserror::Error)]
+#[derive(Debug, thiserror::Error, PartialEq)]
 #[non_exhaustive]
 pub enum StyledTextError<'a> {
     /// Spans are unbalanced: stack already empty when popped
@@ -102,6 +102,9 @@ pub enum StyledTextError<'a> {
     MixedPlaceholders,
     #[error("Interpolating multiple styled text paragraphs is not currently implemented")]
     MultiParagraphInterpolation,
+    /// Invalid color value
+    #[error("Invalid color value '{}'", .0)]
+    InvalidColor(alloc::string::String),
 }
 
 /// Styled text that has been parsed and seperated into paragraphs
@@ -436,7 +439,9 @@ impl StyledText {
                                                         .get(&*value)
                                                         .copied()
                                                 })
-                                                .expect("invalid color value");
+                                                .ok_or_else(|| {
+                                                    StyledTextError::InvalidColor(value.to_string())
+                                                })?;
 
                                         style_stack.push((
                                             Style::Color(value),
@@ -693,6 +698,15 @@ new *line*
             ],
             links: alloc::vec::Vec::new()
         }]
+    );
+
+    assert_eq!(
+        StyledText::parse_interpolated::<StyledText>(
+            r#"<u><font color="\#a">hello world</font></u>"#,
+            &[]
+        )
+        .unwrap_err(),
+        StyledTextError::InvalidColor(r"\#a".into())
     );
 }
 
