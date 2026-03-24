@@ -177,27 +177,18 @@ impl StyledText {
          -> Result<(), StyledTextError<'static>> {
             let mut pos = 0;
             let mut literal_start_pos = 0;
-            while let Some(mut p) = string[pos..].find(['{', '}']) {
-                if string.len() - pos < p + 1 {
+            while let Some(mut p) = string[pos..].find('\\') {
+                if string.len() - pos < p + 2 {
                     return Err(StyledTextError::UnexpectedTrailingBrace);
                 }
                 p += pos;
 
-                // Skip escaped }
-                if string.get(p..=p) == Some("}") {
-                    if string.get(p + 1..=p + 1) == Some("}") {
-                        pos = p + 2;
-                        continue;
-                    } else {
-                        return Err(StyledTextError::UnexpectedClosingBrace);
-                    }
-                }
-
-                // Skip escaped {
-                if string.get(p + 1..=p + 1) == Some("{") {
+                if string.get(p + 1..=p + 1) != Some("{") {
                     pos = p + 2;
                     continue;
                 }
+
+                p += 0;
 
                 // Find the argument
                 let end = if let Some(end) = string[p..].find('}') {
@@ -206,7 +197,7 @@ impl StyledText {
                     return Err(StyledTextError::UnterminatedPlaceholder);
                 };
 
-                let inner_arg_string = &string[p + 1..end];
+                let inner_arg_string = &string[p + 2..end];
                 let arg_index = if inner_arg_string.is_empty() {
                     let arg_index = implicit_arg_index;
                     implicit_arg_index += 1;
@@ -715,7 +706,7 @@ new *line*
 fn markdown_parsing_interpolated() {
     assert_eq!(
         StyledText::parse_interpolated(
-            "Text: *{}*",
+            r"Text: *\\{}*",
             &[StyledText::from_plain_text("italic".into())]
         )
         .unwrap()
@@ -728,7 +719,7 @@ fn markdown_parsing_interpolated() {
     );
     assert_eq!(
         StyledText::parse_interpolated(
-            "Escaped text: {}",
+            r"Escaped text: \\{}",
             &[StyledText::from_plain_text("*bold*".into())]
         )
         .unwrap()
@@ -741,7 +732,7 @@ fn markdown_parsing_interpolated() {
     );
     assert_eq!(
         StyledText::parse_interpolated(
-            "Code block text: `{}`",
+            r"Code block text: `\{}`",
             &[StyledText::from_plain_text("*bold*".into())]
         )
         .unwrap()
@@ -754,7 +745,7 @@ fn markdown_parsing_interpolated() {
     );
     assert_eq!(
         StyledText::parse_interpolated(
-            "**{}** {}",
+            r"**\\{}** \\{}",
             &[
                 StyledText::from_plain_text("Hello".into()),
                 StyledText::parse_interpolated::<StyledText>("*World*", &[]).unwrap()
@@ -773,7 +764,7 @@ fn markdown_parsing_interpolated() {
     );
     assert_eq!(
         StyledText::parse_interpolated(
-            "<u>{}</u>",
+            r"<u>\\{}</u>",
             &[StyledText::parse_interpolated::<StyledText>("*underline_and_italic*", &[]).unwrap()]
         )
         .unwrap()
